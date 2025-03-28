@@ -1,16 +1,35 @@
 import { InputField } from "../Components/InputField";
 import { Link } from "react-router";
 import { validateEmail, validatePassword } from "../scripts/utils";
+import { useState } from "react";
+import { InvalidMessage } from "../Components/InvalidMessage";
 
 export function LoginPage() {
+  const [noUserFound, setNoUserFound] = useState(false);
 
-  const submitForm = (e) => {
+  const submitForm = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const payload = Object.fromEntries(formData);
-    if (!validateEmail(payload.email)) return console.log("Invalid email");
-    if (!validatePassword(payload.senha)) return console.log("Invalid Password");
-    console.log(payload);
+    if (!validateEmail(payload.email)) return setNoUserFound(true);
+    if (!validatePassword(payload.password)) return setNoUserFound(true);
+    setNoUserFound(false)
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/users/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email: payload.email,
+        password: payload.password
+      })
+    });
+    if (response.status>= 400 && response.status<=499) {
+      return setNoUserFound(true)
+    } else {
+      const data = await response.json()
+      console.log(data)
+    }
   };
 
   return (
@@ -20,11 +39,12 @@ export function LoginPage() {
         <form onSubmit={submitForm} className="flex flex-col gap-6">
           <InputField label={"email"} />
           <div>
-            <InputField label={"senha"} type="text" />
+            <InputField name={"password"} label={"senha"} type="text" />
             <p className="text-sm text-blue-500 cursor-pointer">
               Esqueci minha senha
             </p>
           </div>
+          {(noUserFound && <InvalidMessage p={"Email ou senha Incorretos"}/>)}
           <div className="flex flex-col gap-1">
             <button
               type="submit"

@@ -7,7 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router";
 createRoot(document.getElementById("root")).render(
   <BrowserRouter>
     <Routes>
-      <Route index path="/login" element={<LoginPage/>} />
+      <Route index path="/" element={<LoginPage/>} />
       <Route path="/register" element={<RegisterPage/>} />
     </Routes>
   </BrowserRouter>

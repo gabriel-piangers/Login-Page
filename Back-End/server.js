@@ -1,6 +1,7 @@
 import express from "express";
 import { scryptSync, randomBytes, timingSafeEqual } from "crypto";
 import pg from "pg";
+import cors from "cors";
 
 const { Client } = pg;
 const port = process.env.PORT || 3000;
@@ -30,49 +31,73 @@ function hash(password) {
 
 const app = express();
 
+app.use(cors());
 app.use(express.json());
 
 app.get("/users", (req, res) => {
-    const query = "SELECT * FROM users"
-    con.query(query, (error, result) => {
-        if(error) return res.status(500).json({msg: `Error selecting from users: ${error}`})
-        res.status(200).json(result.rows)
-    })
+  const query = "SELECT * FROM users";
+  con.query(query, (error, result) => {
+    if (error)
+      return res
+        .status(500)
+        .json({ msg: `Error selecting from users: ${error}` });
+    res.status(200).json(result.rows);
+  });
 });
 
 app.post("/users", (req, res) => {
-    const {username, email, password} = req.body
-    if (username && email && password) {
-        const query = 'INSERT INTO users (username, email, password) VALUES ($1, $2, $3)'
-        const hashedPassword = hash(password);
-        con.query(query, [username, email, hashedPassword], (error, result) => {
-            if(error) return res.status(500).json({msg: `Error inserting into users: ${error}`})
-            res.status(201).json({msg: `sucessfully created user with username: ${username}, email: ${email}`})
-        })
-    } else {
-        return res.status(400).json({msg: `bad request, missing body components`})
-    }
+  const { username, email, password } = req.body;
+  if (username && email && password) {
+    const query =
+      "INSERT INTO users (username, email, password) VALUES ($1, $2, $3)";
+    const hashedPassword = hash(password);
+    con.query(query, [username, email, hashedPassword], (error, result) => {
+      if (error)
+        return res
+          .status(500)
+          .json({ msg: `Error inserting into users: ${error}` });
+      res
+        .status(201)
+        .json({
+          msg: `sucessfully created user with username: ${username}, email: ${email}`,
+        });
+    });
+  } else {
+    return res
+      .status(400)
+      .json({ msg: `bad request, missing body components: ${JSON.stringify(req.body)}` });
+  }
 });
 
 app.post("/users/login", (req, res) => {
-    const {email, password} = req.body
-    if(email && password) {
-        const selectQuery = 'SELECT password FROM users WHERE email = $1'
-        con.query(selectQuery, [email], (error, result) => {
-            if(error) return res.status(500).json({msg: `Error getting user with email: ${email}: ${error}`})
-            if (result.rowCount<1) return res.status(404).json({msg: `No user found with email: ${email}`})
-            const [salt, key] = result.rows[0].password.split(":")
-            const hashedBuffer = scryptSync(password, salt, 64);
-            const keyBuffer = Buffer.from(key, "hex")
-            if (timingSafeEqual(hashedBuffer, keyBuffer)) {
-                res.status(200).json({msg: `Sucessfully logged in with email: ${email}`})
-            } else {
-                res.status(400).json({msg: `Wrong password`})
-            }
-        })
-    } else {
-        return res.status(400).json({msg: "Bad request, missing body components"})
-    }
+  const { email, password } = req.body;
+  if (email && password) {
+    const selectQuery = "SELECT password FROM users WHERE email = $1";
+    con.query(selectQuery, [email], (error, result) => {
+      if (error)
+        return res
+          .status(500)
+          .json({ msg: `Error getting user with email: ${email}: ${error}` });
+      if (result.rowCount < 1)
+        return res
+          .status(404)
+          .json({ msg: `No user found with email: ${email}` });
+      const [salt, key] = result.rows[0].password.split(":");
+      const hashedBuffer = scryptSync(password, salt, 64);
+      const keyBuffer = Buffer.from(key, "hex");
+      if (timingSafeEqual(hashedBuffer, keyBuffer)) {
+        res
+          .status(200)
+          .json({ msg: `Sucessfully logged in with email: ${email}` });
+      } else {
+        res.status(400).json({ msg: `Wrong password` });
+      }
+    });
+  } else {
+    return res
+      .status(400)
+      .json({ msg: `Bad request, missing body components ${JSON.stringify(req.body)}` });
+  }
 });
 
 app.listen(port, () => {
