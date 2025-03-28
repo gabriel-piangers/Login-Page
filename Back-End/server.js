@@ -72,7 +72,7 @@ app.post("/users", (req, res) => {
 app.post("/users/login", (req, res) => {
   const { email, password } = req.body;
   if (email && password) {
-    const selectQuery = "SELECT password FROM users WHERE email = $1";
+    const selectQuery = "SELECT * FROM users WHERE email = $1 LIMIT 1";
     con.query(selectQuery, [email], (error, result) => {
       if (error)
         return res
@@ -86,9 +86,7 @@ app.post("/users/login", (req, res) => {
       const hashedBuffer = scryptSync(password, salt, 64);
       const keyBuffer = Buffer.from(key, "hex");
       if (timingSafeEqual(hashedBuffer, keyBuffer)) {
-        res
-          .status(200)
-          .json({ msg: `Sucessfully logged in with email: ${email}` });
+        res.status(200).json({user: result.rows[0]});
       } else {
         res.status(400).json({ msg: `Wrong password` });
       }

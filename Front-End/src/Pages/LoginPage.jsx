@@ -1,11 +1,16 @@
 import { InputField } from "../Components/InputField";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { validateEmail, validatePassword } from "../scripts/utils";
 import { useState } from "react";
 import { InvalidMessage } from "../Components/InvalidMessage";
+import { useUser } from "../Providers/UserProvider";
+import { DarkButton } from "../Components/DarkButton";
+import { LightButton } from "../Components/LightButton";
 
 export function LoginPage() {
   const [noUserFound, setNoUserFound] = useState(false);
+  const navigate = useNavigate();
+  const { login } = useUser();
 
   const submitForm = async (e) => {
     e.preventDefault();
@@ -13,22 +18,27 @@ export function LoginPage() {
     const payload = Object.fromEntries(formData);
     if (!validateEmail(payload.email)) return setNoUserFound(true);
     if (!validatePassword(payload.password)) return setNoUserFound(true);
-    setNoUserFound(false)
-    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/users/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        email: payload.email,
-        password: payload.password
-      })
-    });
-    if (response.status>= 400 && response.status<=499) {
-      return setNoUserFound(true)
+    setNoUserFound(false);
+    const response = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/users/login`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: payload.email,
+          password: payload.password,
+        }),
+      }
+    );
+    if (response.status >= 400 && response.status <= 499) {
+      return setNoUserFound(true);
     } else {
-      const data = await response.json()
-      console.log(data)
+      const data = await response.json();
+      console.log(data);
+      login(data);
+      navigate("/logged");
     }
   };
 
@@ -44,20 +54,13 @@ export function LoginPage() {
               Esqueci minha senha
             </p>
           </div>
-          {(noUserFound && <InvalidMessage p={"Email ou senha Incorretos"}/>)}
+          {noUserFound && <InvalidMessage p={"Email ou senha Incorretos"} />}
           <div className="flex flex-col gap-1">
-            <button
-              type="submit"
-              className="bg-slate-800 text-white rounded-xl py-2 mt-2 cursor-pointer active:bg-slate-600 transition-colors duration-300 ease-out"
-            >
-              Login
-            </button>
-            <Link
-              to="/register"
-              className="bg-slate-200 rounded-xl py-2 mt-2 cursor-pointer active:bg-white transition-colors duration-300 ease-out"
-            >
-              <p className="text-center">Não tem uma conta? Cadastre-se</p>
-            </Link>
+            <DarkButton name="Login" type="submit" />
+            <LightButton
+              name="Não tem uma conta? Cadastre-se"
+              onClick={() => navigate("/register")}
+            />
           </div>
         </form>
       </div>
