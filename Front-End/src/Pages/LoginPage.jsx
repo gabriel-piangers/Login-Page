@@ -44,7 +44,7 @@ export function LoginPage() {
 
   return (
     <div className="flex flex-col">
-      <h1 className="text-3xl mx-auto mt-5 mb-8">Login Page</h1>
+      <h1 className="text-3xl font-semibold mx-auto mt-5 mb-8 text-white">Login Page</h1>
       <div className="mx-auto p-8 bg-white rounded-xl">
         <form onSubmit={submitForm} className="flex flex-col gap-6">
           <InputField label={"email"} />
